@@ -1,7 +1,0 @@
-{
-	"name": "spotter",
-	"main": "app.js",
-	"version": "0.0.1",
-	"author": "Antony Bello",
-	"description": "My First Nativescript/Mobile App"
-}
