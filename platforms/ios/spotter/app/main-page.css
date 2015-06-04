@@ -1,0 +1,19 @@
+/*
+* main-page.css
+*
+* Author: Antony Bello
+* Date:   June 3, 2015
+*/
+
+Label {
+    margin-top: 50;
+    font-size: 14;
+    vertical-align: center;
+    text-align: center;
+}
+
+Button {
+  margin-top: 20;
+  font-size: 14;
+  horizontal-align: center;
+}
