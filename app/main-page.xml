@@ -9,7 +9,7 @@
 <Page loaded="pageLoaded" id="page" cssClass="home">
   <StackLayout>
     <Label  text="Choose location:"/>
-    <Button id="pabutton" text="Palo Alto"/>
-    <Button id="newcbutton" text="Newcastle"/>
+    <Button id="pabutton" text="Palo Alto" tap="query"/>
+    <Button id="newcbutton" text="Newcastle" tap="query"/>
   </StackLayout>
 </Page>
