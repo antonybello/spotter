@@ -9,11 +9,11 @@
 <Page loaded="pageLoaded">
   <GridLayout rows="auto, *">
     <StackLayout row="0">
-      <Label id="title" loaded="titleLoaded" text="Current Unoccupied Parking Spots"/>
+      <Label id="title" loaded="titleLoaded" text="Current Unoccupied Parking Spots" textWrap="true"/>
     </StackLayout>
     <ListView id="listView1" items="{{ unoccupiedSensors }}" row="1">
       <ListView.itemTemplate>
-        <Label class="items" loaded="itemsLoaded" text="{{sensorId + ' is ' + distance + ' feet away!' }}"/>
+        <Label loaded="itemsLoaded" text="{{ 'Sensor ' + sensorId + ' is ' + distance + ' feet away!' }}"/>
       </ListView.itemTemplate>
     </ListView>
   </GridLayout>
