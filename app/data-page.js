@@ -66,6 +66,7 @@ var populate = function(data, buttonName, panel) {
 
   var label = new labelModule.Label();
   label.text = "How vacant are the zones in " + city + "?";
+  label.id = "title";
   label.textWrap = true;
   panel.addChild(label);
 
@@ -73,7 +74,7 @@ var populate = function(data, buttonName, panel) {
     var label = new labelModule.Label();
     label.text = data[i].name + ": " + data[i].vacancy + "%";
     label.textWrap = true;
+    label.id = "zones";
     panel.addChild(label);
   }
-
 }

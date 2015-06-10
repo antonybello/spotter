@@ -20,12 +20,11 @@ var FEET_CONVERSION = 3.28084;
 var TELERIK_LAT = 37.444618;
 var TELERIK_LONG = -122.16326300000003;
 
+
 exports.pageLoaded = function(args) {
 
   page = args.object;
-  var panel = view.getViewById(page, "layout");
 
-  // Will work!
   var listView1 = view.getViewById(page, "listView1");
 
   // Make sure we're on iOS before making iOS-specific changes
@@ -46,7 +45,7 @@ exports.pageLoaded = function(args) {
 
   // Get the coordinates of all sensors in Palo Alto
   http.request({
-      url: "http://localhost:8001/occupancies",
+      url: "http://spotterengine-47512.onmodulus.net/occupancies",
       method: "POST"
     }).then(function(response) {
       var parsedContent = JSON.parse(response.content);
@@ -59,18 +58,12 @@ exports.pageLoaded = function(args) {
 };
 
 
-// Get unoccupied sensors from server, with their coordinates and
-// sensor IDs
+// Get unoccupied sensors from server with their coordinates and sensor IDs
 var getUnoccupiedCoords = function(parsedContent) {
+
   var arr = [];
 
-  if (parsedContent == null) {
-    uidialogs.alert("Error retrieving response.");
-    return;
-  }
-
   for (var sensor in parsedContent) {
-
     if (parseInt(parsedContent[sensor].occupancy) == 0) { // Unoccupied
       arr.push({
         'lat': parsedContent[sensor].lat,
@@ -79,22 +72,15 @@ var getUnoccupiedCoords = function(parsedContent) {
       });
     }
   }
-  return (sortByDistance(arr));
+  return sortByDistance(arr);
 }
 
-
-
-/*
-* Sorts the unoccupied coordinates by their distance away from Telerik. We can
-* expand this to the user's last known location, which gets the location found
-* by other applications.
-*/
+// Sorts the unoccupied coordinates by their distance away from Telerik.
 var sortByDistance = function(unoccupiedCoordsArr) {
 
   var LocationManager = locationModule.LocationManager;
   var locationManager = new LocationManager();
   var Location = locationModule.Location;
-  var isEnabled = LocationManager.isEnabled();
 
   var telerikLoc = new Location();
   telerikLoc.latitude = TELERIK_LAT;
@@ -111,6 +97,7 @@ var sortByDistance = function(unoccupiedCoordsArr) {
 
     distance = LocationManager.distance(telerikLoc, tempLoc);
     entry.distance = Math.round(toFeet(distance));
+
   });
 
   unoccupiedCoordsArr.sort(function(a, b) {
@@ -118,18 +105,18 @@ var sortByDistance = function(unoccupiedCoordsArr) {
   });
 
   return unoccupiedCoordsArr;
-
 }
+
 
 /** Changing fonts **/
 exports.itemsLoaded = function(args) {
   var element = args.object;
-  element.ios.font = UIFont.fontWithNameSize("HelveticaNeue-Light", 15);
+  element.ios.font = UIFont.fontWithNameSize("HelveticaNeue-Light", 14);
 }
 
 exports.titleLoaded = function(args) {
   var element = args.object;
-  element.ios.font = UIFont.fontWithNameSize("HelveticaNeue", 18);
+  element.ios.font = UIFont.fontWithNameSize("HelveticaNeue", 16);
 }
 
 var toFeet = function(x) {

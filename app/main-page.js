@@ -49,7 +49,7 @@ exports.query = function(args) {
   };
 
   http.request({
-    url: "http://localhost:8001/data", // Modulus URL
+    url: "http://spotterengine-47512.onmodulus.net/data", // Modulus URL
     method: "POST",
     headers: headers
   }).then(function(response) { // Navigate to results page once request is sent
