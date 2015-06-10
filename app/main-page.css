@@ -6,6 +6,10 @@
 */
 
 
+StackLayout {
+  margin-top: 100;
+}
+
 Button {
   color: white;
   horizontal-align: center;
