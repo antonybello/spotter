@@ -8,8 +8,9 @@
 
 <Page loaded="pageLoaded" id="page" cssClass="home">
   <StackLayout>
-    <Label  text="Choose location:"/>
-    <Button id="pabutton" text="Palo Alto" tap="query"/>
-    <Button id="newcbutton" text="Newcastle" tap="query"/>
+      <Image src="~/res/nlogo.jpg" stretch="fill" width="85" height="100" />
+      <Button id="pabutton" loaded="elementLoaded" text="How vacant are the streets in Palo Alto?" tap="query"/>
+      <Button id="newcbutton" loaded="elementLoaded" text="How vacant are the streets in Newcastle?" tap="query"/>
+      <Button text="Find me a spot!" loaded="elementLoaded" tap="nearme"/>
   </StackLayout>
 </Page>

@@ -16,7 +16,8 @@ var uidialogs = require("ui/dialogs");
 var view = require("ui/core/view");
 var observableModule = require("data/observable");
 var http = require("http");
-
+var buttonModule = require("ui/button");
+var platformModule = require("platform");
 
 exports.pageLoaded = function(args) {
 
@@ -43,13 +44,12 @@ exports.pageLoaded = function(args) {
 exports.query = function(args) {
 
   var buttonName = args.object.id;
-
   var headers = {
     "clickedName": buttonName
   };
 
   http.request({
-    url: "http://spotterengine-47512.onmodulus.net/data", // Modulus URL
+    url: "http://localhost:8001/data", // Modulus URL
     method: "POST",
     headers: headers
   }).then(function(response) { // Navigate to results page once request is sent
@@ -65,4 +65,31 @@ exports.query = function(args) {
   }, function(err) {
     console.log(err);
   });
+}
+
+exports.nearme = function(args) {
+
+  var button = (args.object);
+  if (button.android) {
+    console.log("Application run on Android");
+    (applicationModule.android.currentContext).startActivityForResult(new android.content.Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS), 0);
+  } else if (button.ios) {
+    console.log("Application run on iOS");
+    if (platformModule.device.osVersion.indexOf("8") === 0) {
+      console.log("iOS version is greater or equal to 8.0");
+      var iosLocationManager = CLLocationManager.alloc().init();
+      iosLocationManager.requestWhenInUseAuthorization();
+    }
+  }
+
+  frameModule.topmost().navigate({
+    moduleName: "locations",
+    animated: false
+  });
+}
+
+// Font setter
+exports.elementLoaded = function(args) {
+  var element = args.object;
+  element.ios.font = UIFont.fontWithNameSize("HelveticaNeue-Medium", 16);
 }
