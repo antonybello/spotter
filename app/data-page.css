@@ -5,12 +5,20 @@
 * Date:   June 3, 2015
 */
 
-#layout {
-  margin-top: 50;
+Label {
+  horizontal-align: center;
+  color: white;
 }
 
-Label {
-  margin-top: 10;
-  font-size: 14;
-  horizontal-align: center;
+#layout {
+  margin-top: 100;
+}
+
+#title {
+  margin-bottom: 20;
+}
+
+#zones {
+  margin-top: 5;
+  font-size: 16;
 }

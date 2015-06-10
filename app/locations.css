@@ -5,9 +5,16 @@
 * Date:   June 3, 2015
 */
 
+Label {
+margin:15;
+}
+
 #title {
   horizontal-align: center;
-  margin-top: 40;
-  margin-bottom: 10;
+  margin: 25;
   color:white;
+}
+
+#listview1 {
+    color: black;
 }

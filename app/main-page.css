@@ -5,6 +5,9 @@
 * Date:   June 3, 2015
 */
 
+Image {
+  margin-bottom: 10;
+}
 
 StackLayout {
   margin-top: 100;
