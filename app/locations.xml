@@ -1,0 +1,20 @@
+<!--
+// locations.xml
+//
+//
+// Author: Antony Bello
+// Date:   June 10, 2015
+-->
+
+<Page loaded="pageLoaded">
+  <GridLayout rows="auto, *">
+    <StackLayout row="0">
+      <Label id="title" loaded="titleLoaded" text="Current Unoccupied Parking Spots"/>
+    </StackLayout>
+    <ListView id="listView1" items="{{ unoccupiedSensors }}" row="1">
+      <ListView.itemTemplate>
+        <Label class="items" loaded="itemsLoaded" text="{{sensorId + ' is ' + distance + ' feet away!' }}"/>
+      </ListView.itemTemplate>
+    </ListView>
+  </GridLayout>
+</Page>
