@@ -2,30 +2,29 @@
  * locations.js
  *
  * Retrieves the coordinates of unoccupied parking sensors for zones in
- * Palo Alto.
+ * Palo Alto and Los Gatos, and displays them on a map.
  *
  * Author: Antony Bello
- * Date: 	June 3, 2015
+ * Date: 	June 15, 2015
  */
 
 var frameModule = require("ui/frame");
-var applicationModule = require("application");
-var view = require("ui/core/view");
-var uidialogs = require("ui/dialogs");
 var http = require("http");
 var locationModule = require("location");
-var page;
+var uidialogs = require("ui/dialogs");
 
-var FEET_CONVERSION = 3.28084;
-var TELERIK_LAT = 37.444618;
-var TELERIK_LONG = -122.16326300000003;
+var camera, mapView, marker, myLocation;
 
+var PA_LAT = 37.444926;
+var PA_LONG = -122.161609;
+var LG_LAT = 37.221892;
+var LG_LONG = -121.984288;
+var PA_ZOOM = 17;
+var LG_ZOOM = 15;
 
 exports.pageLoaded = function(args) {
 
-  page = args.object;
-
-  var listView1 = view.getViewById(page, "listView1");
+  var page = args.object;
 
   // Make sure we're on iOS before making iOS-specific changes
   if (page.ios) {
@@ -34,91 +33,99 @@ exports.pageLoaded = function(args) {
     frameModule.topmost().ios.navBarVisibility = "always";
 
     // Change the UIViewController's title property
-    page.ios.title = "Results";
+    page.ios.title = "Spotter";
 
     // Get access to the native iOS UINavigationController
     var controller = frameModule.topmost().ios.controller;
 
     // Call the UINavigationController's setNavigationBarHidden method
     controller.navigationBarHidden = false;
+
   }
 
-  // Get the coordinates of all sensors in Palo Alto
-  http.request({
-      url: "http://spotterengine-47512.onmodulus.net/occupancies",
-      method: "POST"
-    }).then(function(response) {
-      var parsedContent = JSON.parse(response.content);
-      var sortedCoordsArr = getUnoccupiedCoords(parsedContent);
-      page.bindingContext = { unoccupiedSensors : sortedCoordsArr }; // Bind to XML
-    }),
-    function(err) {
-      console.log(err);
-    };
-};
-
-
-// Get unoccupied sensors from server with their coordinates and sensor IDs
-var getUnoccupiedCoords = function(parsedContent) {
-
-  var arr = [];
-
-  for (var sensor in parsedContent) {
-    if (parseInt(parsedContent[sensor].occupancy) == 0) { // Unoccupied
-      arr.push({
-        'lat': parsedContent[sensor].lat,
-        'long': parsedContent[sensor].long,
-        'sensorId': sensor
-      });
-    }
-  }
-  return sortByDistance(arr);
 }
 
-// Sorts the unoccupied coordinates by their distance away from Telerik.
-var sortByDistance = function(unoccupiedCoordsArr) {
+/*
+* Creates the map view. Map is centered around the city that is closer to the
+* user. HTTP request is sent to the node server which returns a list of
+* sensors with their GPS Coordinates, and the Google Maps API places markers
+* on all the unoccupied spots in that city.
+*/
+exports.createMapView = function(args) {
 
   var LocationManager = locationModule.LocationManager;
   var locationManager = new LocationManager();
   var Location = locationModule.Location;
 
-  var telerikLoc = new Location();
-  telerikLoc.latitude = TELERIK_LAT;
-  telerikLoc.longitude = TELERIK_LONG;
+  var paLoc = new Location();
+  paLoc.latitude = PA_LAT;
+  paLoc.longitude = PA_LONG;
 
-  var distance;
+  var lgLoc = new Location();
+  lgLoc.latitude = LG_LAT;
+  lgLoc.longitude = LG_LONG;
 
-  // For each unoccupied sensor, add distance from Telerik as a field
-  unoccupiedCoordsArr.forEach(function(entry) {
+  var locationOptions = {
+      timeout: 1000
+  };
 
-    var tempLoc = new Location();
-    tempLoc.latitude = entry.lat;
-    tempLoc.longitude = entry.long;
-
-    distance = LocationManager.distance(telerikLoc, tempLoc);
-    entry.distance = Math.round(toFeet(distance));
-
-  });
-
-  unoccupiedCoordsArr.sort(function(a, b) {
-    return (a.distance < b.distance) ? -1 : ((a.distance > b.distance) ? 1 : 0);
-  });
-
-  return unoccupiedCoordsArr;
-}
+  locationManager.startLocationMonitoring(function (location) {},
+    function (error) {
+      console.log('Location error received: ' + error);
+    }, locationOptions);
 
 
-/** Changing fonts **/
-exports.itemsLoaded = function(args) {
-  var element = args.object;
-  element.ios.font = UIFont.fontWithNameSize("HelveticaNeue-Light", 14);
-}
+  var lastKnown = locationManager.lastKnownLocation;
+  var distanceToPA = LocationManager.distance(lastKnown, paLoc);
+  var distanceToLG =  LocationManager.distance(lastKnown, lgLoc);
+  locationManager.stopLocationMonitoring();
 
-exports.titleLoaded = function(args) {
-  var element = args.object;
-  element.ios.font = UIFont.fontWithNameSize("HelveticaNeue", 16);
-}
+  var headers = {'city': ''};
+  if (distanceToPA <= distanceToLG)  {
+      camera = GMSCameraPosition.cameraWithLatitudeLongitudeZoom(PA_LAT,PA_LONG,PA_ZOOM);
+      headers.city = 'Palo Alto';
+  } else {
+      camera = GMSCameraPosition.cameraWithLatitudeLongitudeZoom(LG_LAT,LG_LONG,LG_ZOOM);
+      headers.city = 'Los Gatos';
+  }
 
-var toFeet = function(x) {
-  return x*FEET_CONVERSION;
+  mapView = GMSMapView.mapWithFrameCamera(CGRectZero, camera);
+
+  myLocation = GMSMarker.alloc().init();
+  myLocation.position = {
+    latitude: lastKnown.latitude,
+    longitude: lastKnown.longitude
+  };
+  myLocation.title = "You are here!";
+  myLocation.map = mapView;
+
+  var occupancy, lat, long;
+
+  // Get the coordinates of all sensors depending on distance from cities
+  http.request({
+      url: "http://spotterengine-47512.onmodulus.net/occupancies",
+      method: "POST",
+      headers: headers
+    }).then(function(response) {
+      var parsedContent = JSON.parse(response.content);
+      for (var sensor in parsedContent) {
+        occupancy = parseInt(parsedContent[sensor].occupancy);
+        if (occupancy == 0) {
+          lat = parseFloat(parsedContent[sensor].lat);
+          long = parseFloat(parsedContent[sensor].long);
+          marker = GMSMarker.alloc().init(); // Place markers on map
+          marker.position = {
+            latitude: lat,
+            longitude: long
+          };
+          marker.title = "Sensor: " + sensor;
+          marker.map = mapView;
+        }
+      }
+    }),
+    function(err) {
+      uidialogs.alert("Error retrieving server response");
+      console.log(err);
+    };
+  args.view = mapView;
 }

@@ -6,15 +6,8 @@
 // Date:   June 10, 2015
 -->
 
-<Page loaded="pageLoaded">
-  <GridLayout rows="auto, *">
-    <StackLayout row="0">
-      <Label id="title" loaded="titleLoaded" text="Current Unoccupied Parking Spots" textWrap="true"/>
-    </StackLayout>
-    <ListView id="listView1" items="{{ unoccupiedSensors }}" row="1">
-      <ListView.itemTemplate>
-        <Label loaded="itemsLoaded" text="{{ 'Sensor ' + sensorId + ' is ' + distance + ' feet away!' }}"/>
-      </ListView.itemTemplate>
-    </ListView>
+<Page xmlns="http://www.nativescript.org/tns.xsd" loaded="pageLoaded">
+  <GridLayout rows="*">
+    <Placeholder row="0" creatingView="createMapView" />
   </GridLayout>
 </Page>
