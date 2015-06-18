@@ -31,7 +31,7 @@ var LG_LONG = -121.984288;
 var PA_ZOOM = 16;
 var LG_ZOOM = 15;
 var INIT_ZOOM = 9;
-var API_KEY = ''; // <=== VIMOC API KEY HERE!!
+var API_KEY = ''; // <=== GOOGLE API KEY HERE!!
 
 var paLoc = makeLocation(PA_LAT, PA_LONG);
 var lgLoc = makeLocation(LG_LAT, LG_LONG);
