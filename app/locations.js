@@ -29,6 +29,7 @@ var LG_LONG = -121.984288;
 var PA_ZOOM = 16;
 var LG_ZOOM = 15;
 var INIT_ZOOM = 9;
+var API_KEY = ''; // API KEY HERE!!
 
 var paLoc = makeLocation(PA_LAT, PA_LONG);
 var lgLoc = makeLocation(LG_LAT, LG_LONG);
@@ -73,7 +74,7 @@ function showUnoccupiedSpotsNearMe() {
 function showUnoccupiedSpotsNearLoc(address) {
   http.request({
     url: 'https://maps.googleapis.com/maps/api/geocode/json?address=' + address
-      + '&key=AIzaSyAWy9CCxWQxUKA0iYLPqqzf-ACogP204sA'
+      + '&key=' + API_KEY
   }).then(function(response) {
     var parsedContent = JSON.parse(response.content);
     var addressLoc = processResponseAndAddMarker(parsedContent);
