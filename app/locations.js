@@ -22,6 +22,8 @@ var Location = locationModule.Location;
 var camera, mapView, marker;
 var cityHeader = {'city': ''};
 
+
+var MODULUS_URL = ''; // <=== MODULUS URL HERE!!
 var PA_LAT = 37.444926;
 var PA_LONG = -122.161609;
 var LG_LAT = 37.221892;
@@ -29,7 +31,7 @@ var LG_LONG = -121.984288;
 var PA_ZOOM = 16;
 var LG_ZOOM = 15;
 var INIT_ZOOM = 9;
-var API_KEY = ''; // API KEY HERE!!
+var API_KEY = ''; // <=== VIMOC API KEY HERE!!
 
 var paLoc = makeLocation(PA_LAT, PA_LONG);
 var lgLoc = makeLocation(LG_LAT, LG_LONG);
@@ -91,7 +93,7 @@ function showUnoccupiedSpotsNearLoc(address) {
 function makeCallAndPlaceUnoccupiedMarkers() {
   var occupancy, lat, long;
   http.request({
-      url: "http://spotterengine-47512.onmodulus.net/occupancies",
+      url: MODULUS_URL + "/occupancies",
       method: "POST",
       headers: cityHeader
     }).then(function(response) {
