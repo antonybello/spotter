@@ -44,33 +44,6 @@ exports.pageLoaded = function(args) {
   }
 };
 
-/* Sends a POST request to our node server, telling it which button was clicked */
-exports.query = function(args) {
-
-  var buttonName = args.object.id;
-  var headers = {
-    "clickedName": buttonName
-  };
-
-  http.request({
-    url: "http://spotterengine-47512.onmodulus.net/data", // Modulus URL
-    method: "POST",
-    headers: headers
-  }).then(function(response) { // Navigate to results page once request is sent
-    if (response.statusCode === 201) {
-      frameModule.topmost().navigate({
-        moduleName: "data-page",
-        context: buttonName,
-        animated: false
-      });
-    } else {
-      uidialogs.alert("Error retrieving response.");
-    }
-  }, function(err) {
-    console.log(err);
-  });
-}
-
 exports.nearme = function(args) {
 
   var button = (args.object);
