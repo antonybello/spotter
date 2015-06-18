@@ -16,12 +16,16 @@ var uidialogs = require("ui/dialogs");
 var view = require("ui/core/view");
 var observableModule = require("data/observable");
 var http = require("http");
-var buttonModule = require("ui/button");
 var platformModule = require("platform");
+
+var page;
+var pageData = new observableModule.Observable();
 
 exports.pageLoaded = function(args) {
 
-  var page = args.object;
+  page = args.object;
+  page.bindingContext = pageData;
+  pageData.set("task", "");
 
   // Make sure we're on iOS before making iOS-specific changes
   if (page.ios) {
@@ -30,7 +34,7 @@ exports.pageLoaded = function(args) {
     frameModule.topmost().ios.navBarVisibility = "always";
 
     // Change the UIViewController's title property
-    page.ios.title = "Spots";
+    page.ios.title = "Spotter";
 
     // Get access to the native iOS UINavigationController
     var controller = frameModule.topmost().ios.controller;
@@ -70,6 +74,7 @@ exports.query = function(args) {
 exports.nearme = function(args) {
 
   var button = (args.object);
+
   if (button.android) {
     console.log("Application run on Android");
     (applicationModule.android.currentContext).startActivityForResult(new android.content.Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS), 0);
@@ -84,12 +89,71 @@ exports.nearme = function(args) {
 
   frameModule.topmost().navigate({
     moduleName: "locations",
-    animated: false
+    animated: false,
+    context: 'nearme'
   });
 }
 
+exports.geocode = function(args) {
+  var address = parseAddress(pageData.get("task"));
+  var requestFormat = makeAddressString(address);
+  frameModule.topmost().navigate({
+    moduleName: "locations",
+    animated: false,
+    context: requestFormat
+  });
+}
+
+
+/* HELPER FUNCTIONS */
+
+function validAddress(address) {
+  if (firstEntryIsNumber(address) == -1) {
+    return (address.length >= 3); // Street Name was entered
+  } else {
+    return (address.length >= 4); // Full Address
+  }
+}
+
+function firstEntryIsNumber(address) {
+  return parseInt(address[0]) || -1;
+}
+
+function makeAddressString(address) {
+  var str = "";
+  if (validAddress(address)) {
+    for (var i = 0; i < address.length; i++) {
+      if (i != address.length - 1) {
+        str += (address[i] + "+");
+      } else {
+        str += address[i];
+      }
+    }
+  } else {
+    uidialogs.alert("Valid Address format: 169 University Avenue, Palo Alto | Ramona Street, Palo Alto");
+    return null;
+  }
+  return str;
+}
+
+function parseAddress(address) {
+  address = address.toLowerCase().trim();
+  address = address.split(/[\s,]+/);
+  return address;
+}
+
 // Font setter
+exports.textfieldLoaded = function(args) {
+  var element = args.object;
+  element.ios.font = UIFont.fontWithNameSize("HelveticaNeue-Thin", 15);
+}
+
+exports.goButtonLoaded = function(args) {
+  var element = args.object;
+  element.ios.font = UIFont.fontWithNameSize("HelveticaNeue-Medium", 18);
+}
+
 exports.elementLoaded = function(args) {
   var element = args.object;
-  element.ios.font = UIFont.fontWithNameSize("HelveticaNeue-Medium", 16);
+  element.ios.font = UIFont.fontWithNameSize("HelveticaNeue", 18);
 }

@@ -13,104 +13,91 @@ var http = require("http");
 var locationModule = require("location");
 var uidialogs = require("ui/dialogs");
 
-var camera, mapView, marker, myLocation;
+var page;
+
+var LocationManager = locationModule.LocationManager;
+var locationManager = new LocationManager();
+var Location = locationModule.Location;
+
+var camera, mapView, marker;
+var cityHeader = {'city': ''};
 
 var PA_LAT = 37.444926;
 var PA_LONG = -122.161609;
 var LG_LAT = 37.221892;
 var LG_LONG = -121.984288;
-var PA_ZOOM = 17;
+var PA_ZOOM = 16;
 var LG_ZOOM = 15;
+var INIT_ZOOM = 9;
+
+var paLoc = makeLocation(PA_LAT, PA_LONG);
+var lgLoc = makeLocation(LG_LAT, LG_LONG);
 
 exports.pageLoaded = function(args) {
 
-  var page = args.object;
+  page = args.object;
+  page.bindingContext = page.navigationContext;
 
   // Make sure we're on iOS before making iOS-specific changes
   if (page.ios) {
-
-    // Tell the frame module that the navigation bar should always display
     frameModule.topmost().ios.navBarVisibility = "always";
-
-    // Change the UIViewController's title property
     page.ios.title = "Spotter";
-
-    // Get access to the native iOS UINavigationController
     var controller = frameModule.topmost().ios.controller;
-
-    // Call the UINavigationController's setNavigationBarHidden method
     controller.navigationBarHidden = false;
-
   }
+
+  // Call function depending on user choice
+  if (page.bindingContext === 'nearme') showUnoccupiedSpotsNearMe();
+  else showUnoccupiedSpotsNearLoc(page.bindingContext);
 
 }
 
-/*
-* Creates the map view. Map is centered around the city that is closer to the
-* user. HTTP request is sent to the node server which returns a list of
-* sensors with their GPS Coordinates, and the Google Maps API places markers
-* on all the unoccupied spots in that city.
-*/
+// Sets up the initial map
 exports.createMapView = function(args) {
-
-  var LocationManager = locationModule.LocationManager;
-  var locationManager = new LocationManager();
-  var Location = locationModule.Location;
-
-  var paLoc = new Location();
-  paLoc.latitude = PA_LAT;
-  paLoc.longitude = PA_LONG;
-
-  var lgLoc = new Location();
-  lgLoc.latitude = LG_LAT;
-  lgLoc.longitude = LG_LONG;
-
-  var locationOptions = {
-      timeout: 1000
-  };
-
-  locationManager.startLocationMonitoring(function (location) {},
-    function (error) {
-      console.log('Location error received: ' + error);
-    }, locationOptions);
-
-
-  var lastKnown = locationManager.lastKnownLocation;
-  var distanceToPA = LocationManager.distance(lastKnown, paLoc);
-  var distanceToLG =  LocationManager.distance(lastKnown, lgLoc);
-  locationManager.stopLocationMonitoring();
-
-  var headers = {'city': ''};
-  if (distanceToPA <= distanceToLG)  {
-      camera = GMSCameraPosition.cameraWithLatitudeLongitudeZoom(PA_LAT,PA_LONG,PA_ZOOM);
-      headers.city = 'Palo Alto';
-  } else {
-      camera = GMSCameraPosition.cameraWithLatitudeLongitudeZoom(LG_LAT,LG_LONG,LG_ZOOM);
-      headers.city = 'Los Gatos';
-  }
-
+  camera = GMSCameraPosition.cameraWithLatitudeLongitudeZoom(PA_LAT,PA_LONG,INIT_ZOOM);
   mapView = GMSMapView.mapWithFrameCamera(CGRectZero, camera);
+  args.view = mapView;
+}
 
-  myLocation = GMSMarker.alloc().init();
-  myLocation.position = {
-    latitude: lastKnown.latitude,
-    longitude: lastKnown.longitude
+// Displays the user's location along with unoccupied parking spots nearby
+function showUnoccupiedSpotsNearMe() {
+  var lastKnown = monitorLocationAndReturnLastKnown();
+  var zoomParams = setHeadersBasedOnDistance(lgLoc, paLoc, lastKnown);
+  zoomToLocation(zoomParams.lat, zoomParams.long, zoomParams.zoom);
+  mapView.myLocationEnabled = true;
+  makeCallAndPlaceUnoccupiedMarkers();
+}
+
+// Displays the inputted address along with unoccupied spots nearby. Uses
+// Google's Geocoding API to get GPS coords of address
+function showUnoccupiedSpotsNearLoc(address) {
+  http.request({
+    url: 'https://maps.googleapis.com/maps/api/geocode/json?address=' + address
+      + '&key=AIzaSyAWy9CCxWQxUKA0iYLPqqzf-ACogP204sA'
+  }).then(function(response) {
+    var parsedContent = JSON.parse(response.content);
+    var addressLoc = processResponseAndAddMarker(parsedContent);
+    var zoomParams = setHeadersBasedOnDistance(lgLoc, paLoc, addressLoc);
+    makeCallAndPlaceUnoccupiedMarkers();
+    zoomToLocation(zoomParams.lat, zoomParams.long, zoomParams.zoom);
+  }), function(err) {
+    uidialogs.alert("Error getting location: " + err);
   };
-  myLocation.title = "You are here!";
-  myLocation.map = mapView;
+}
 
+// Makes call to the Modulus server for parking spots, and filters out the
+// unoccupied ones.
+function makeCallAndPlaceUnoccupiedMarkers() {
   var occupancy, lat, long;
-
-  // Get the coordinates of all sensors depending on distance from cities
   http.request({
       url: "http://spotterengine-47512.onmodulus.net/occupancies",
       method: "POST",
-      headers: headers
+      headers: cityHeader
     }).then(function(response) {
       var parsedContent = JSON.parse(response.content);
       for (var sensor in parsedContent) {
         occupancy = parseInt(parsedContent[sensor].occupancy);
-        if (occupancy == 0) {
+        if (occupancy == 0) { // Unoccupied
           lat = parseFloat(parsedContent[sensor].lat);
           long = parseFloat(parsedContent[sensor].long);
           marker = GMSMarker.alloc().init(); // Place markers on map
@@ -127,5 +114,67 @@ exports.createMapView = function(args) {
       uidialogs.alert("Error retrieving server response");
       console.log(err);
     };
-  args.view = mapView;
+}
+
+// Returns current location.
+function monitorLocationAndReturnLastKnown() {
+  var locationOptions = { timeout: 1000 };
+  locationManager.startLocationMonitoring(function (location) {},
+    function (error) {
+      console.log('Location error received: ' + error);
+    }, locationOptions);
+  locationManager.stopLocationMonitoring();
+  return locationManager.lastKnownLocation;
+}
+
+// Specifies the city whose parking spots we want. This is to avoid calling
+// the server for both locations when we only want one.
+function setHeadersBasedOnDistance(lg, pa, theLoc) {
+
+  var distanceToLG = LocationManager.distance(theLoc, lg);
+  var distanceToPA = LocationManager.distance(theLoc, pa);
+  var zoom;
+
+  if (distanceToPA <= distanceToLG)  {
+    cityHeader.city = 'Palo Alto';
+    console.log(cityHeader.city);
+    zoom = PA_ZOOM;
+  } else {
+    cityHeader.city = 'Los Gatos';
+    console.log(cityHeader.city);
+    zoom = LG_ZOOM;
+  }
+  return makeZoomParameters(theLoc.latitude, theLoc.longitude, zoom);
+}
+
+// Processes geocoded data from Google's Geocoding API. Places marker on
+// the inputted address, and returns the address as a Location object.
+function processResponseAndAddMarker(parsedRes) {
+  var lat =  parsedRes.results[0].geometry.location.lat;
+  var long = parsedRes.results[0].geometry.location.lng;
+  marker = GMSMarker.alloc().init(); // Place markers on map
+  marker.position = {
+    latitude: lat,
+    longitude: long
+  };
+  marker.title = "Desired Location!";
+  marker.map = mapView;
+  return makeLocation(lat,long);
+}
+
+// Create a Location object out of GPS coordinates
+function makeLocation(lat,long) {
+  var loc = new Location();
+  loc.latitude = lat;
+  loc.longitude = long;
+  return loc;
+}
+
+function makeZoomParameters(lat,long,zoom) {
+  return {lat: lat, long:long, zoom: zoom};
+}
+
+function zoomToLocation(lat,long,zoom) {
+  mapView.animateToLocation(CLLocationCoordinate2DMake(lat,long));
+  mapView.animateToZoom(zoom);
 }

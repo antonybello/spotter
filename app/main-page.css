@@ -6,14 +6,23 @@
 */
 
 Image {
+  margin-top: 120;
   margin-bottom: 10;
-}
-
-StackLayout {
-  margin-top: 100;
+  horizontal-align:center;
 }
 
 Button {
   color: white;
-  horizontal-align: center;
+}
+
+#spotfind {
+  horizontal-align: left;
+  background-color:white;
+  color:#3D60F5;
+  margin:15;
+}
+
+TextField {
+  margin: 15;
+  background-color: white;
 }

@@ -7,10 +7,12 @@
 -->
 
 <Page loaded="pageLoaded" id="page" cssClass="home">
-  <StackLayout>
-      <Image src="~/res/nlogo.jpg" stretch="fill" width="85" height="100" />
-      <Button id="pabutton" loaded="elementLoaded" text="How vacant are the streets in Palo Alto?" tap="query"/>
-      <Button id="newcbutton" loaded="elementLoaded" text="How vacant are the streets in Newcastle?" tap="query"/>
-      <Button text="Find me a spot!" loaded="elementLoaded" tap="nearme"/>
-  </StackLayout>
+  <GridLayout rows="auto,auto,auto">
+    <Image row="0" src="~/res/nlogo.jpg" row="0" stretch="fill" width="85" height="100" />
+    <StackLayout orientation="horizontal" row="1">
+      <TextField loaded="textfieldLoaded" text="{{ task }}" height="30" width="220" hint="Enter an address..." id="task" />
+      <Button text="Go" loaded="goButtonLoaded" tap="geocode"></Button>
+    </StackLayout>
+    <Button row="2" height="30" width="220" id="spotfind" text="Find a spot near me!" loaded="elementLoaded" tap="nearme"/>
+  </GridLayout>
 </Page>
