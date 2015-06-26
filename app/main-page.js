@@ -70,11 +70,13 @@ exports.nearme = function(args) {
 exports.geocode = function(args) {
   var address = parseAddress(pageData.get("task"));
   var requestFormat = makeAddressString(address);
-  frameModule.topmost().navigate({
-    moduleName: "locations",
-    animated: false,
-    context: requestFormat
-  });
+  if (requestFormat != null) {
+    frameModule.topmost().navigate({
+      moduleName: "locations",
+      animated: false,
+      context: requestFormat
+    });
+  }
 }
 
 
