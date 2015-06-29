@@ -14,18 +14,14 @@ var frameModule = require("ui/frame");
 var applicationModule = require("application");
 var uidialogs = require("ui/dialogs");
 var view = require("ui/core/view");
-var observableModule = require("data/observable");
 var http = require("http");
 var platformModule = require("platform");
 
 var page;
-var pageData = new observableModule.Observable();
 
 exports.pageLoaded = function(args) {
 
   page = args.object;
-  page.bindingContext = pageData;
-  pageData.set("task", "");
 
   // Make sure we're on iOS before making iOS-specific changes
   if (page.ios) {
@@ -68,8 +64,9 @@ exports.nearme = function(args) {
 }
 
 exports.geocode = function(args) {
-  var address = parseAddress(pageData.get("task"));
-  var requestFormat = makeAddressString(address);
+  var textFieldInput = view.getViewById(page, "task").text;
+  var parsedAddress = parseAddress(textFieldInput);
+  var requestFormat = makeAddressString(parsedAddress);
   if (requestFormat != null) {
     frameModule.topmost().navigate({
       moduleName: "locations",

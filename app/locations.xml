@@ -7,7 +7,5 @@
 -->
 
 <Page xmlns="http://www.nativescript.org/tns.xsd" loaded="pageLoaded">
-  <GridLayout rows="*">
     <Placeholder row="0" creatingView="createMapView" />
-  </GridLayout>
 </Page>
